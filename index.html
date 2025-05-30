@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Book Search App</title>
+
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  
+  
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .book-card img {
+      max-height: 200px;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<link rel="stylesheet" href="style.css">
+
+<body class="bg-light">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="#">Book Search</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1 class="mb-4">Search for Books</h1>
+    <form id="searchForm" class="input-group mb-3">
+      <input type="text" id="searchInput" class="form-control" placeholder="Enter book title..." required />
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+
+    <div id="results" class="row g-3"></div>
+  </div>
+
+  <script>
+    document.getElementById('searchForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const query = document.getElementById('searchInput').value.trim();
+      if (query === '') return;
+
+   fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}`)
+  .then(response => response.json())
+  .then(data => {
+    const results = document.getElementById('results');
+    results.innerHTML = '';
+    const books = data.docs.slice(0, 10); 
+
+   books.forEach(book => {
+  const title = book.title && book.title.trim() ? book.title : 'Untitled';
+  const author = book.author_name && book.author_name.length > 0
+    ? book.author_name.join(', ')
+    : 'Unknown Author';
+
+  const coverId = book.cover_i;
+  const coverUrl = coverId 
+    ? `https://covers.openlibrary.org/b/id/${coverId}-M.jpg` 
+    : 'https://via.placeholder.com/150x200?text=No+Cover';
+
+  const card = `
+    <div class="col-md-4">
+      <div class="card book-card h-100 shadow-sm">
+        <img src="${coverUrl}" class="card-img-top" alt="${title}" />
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">${title}</h5>
+          <p class="card-text"><strong>Author:</strong> ${author}</p>
+          <form method="POST" action="backend/save.php" class="mt-auto">
+            <input type="hidden" name="title" value="${title}">
+            <input type="hidden" name="author" value="${author}">
+            <input type="hidden" name="cover_id" value="${coverId || ''}">
+            <button type="submit" class="btn btn-success w-100">Save Book</button>
+          </form>
+        </div>
+      </div>
+    </div>`;
+  results.insertAdjacentHTML('beforeend', card);
+});
+
+        })
+        .catch(error => {
+          console.error('Error fetching books:', error);
+        });
+    });
+  </script>
+
+</body>
+</html>
